@@ -8,6 +8,18 @@
 // Main include file
 #include "main.h"
 
+//global time structure
+
+//Time structure
+typedef struct
+{
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+}st_time_t;
+
+st_time_t gst_time; 
+
 // Task handle structure
 typedef struct
 {
@@ -19,6 +31,8 @@ st_task_state_t task_state[ TASK_STATE_MAX ];
 
 // Button Task
 void vButtonTask( void *pvParameters );
+// Watch task
+void vWatchTask( void *pvParameters );
 
 // Application Idel Hook 
 extern void vApplicationIdleHook( void );
@@ -40,9 +54,17 @@ int main(void)
 							(const char *) "btTask",		// Task Name
 							configMINIMAL_STACK_SIZE,	// Stack grösse
 							NULL,						// Übergabe Wert
-							1,							// Prio
+							3,							// Prio
 							NULL);						// Handle
 	configASSERT( task_status == pdPASS );				// Prüfen ob der Task korrekt erstellt wurde
+	
+	task_status = xTaskCreate( vWatchTask,							// Funktions Name
+							(const char *) "wtTask",					// Task Name
+							configMINIMAL_STACK_SIZE,				// Stack grösse
+							NULL,									// Übergabe Wert
+							1,										// Prio
+							task_state[WatchTaskHandle].handle);		// Handle
+	configASSERT( task_status == pdPASS );							// Prüfen ob der Task korrekt erstellt wurde
 	
 	vDisplayClear();
 	vDisplayWriteStringAtPos(0,0,"FreeRTOS 10.0.1");
@@ -56,7 +78,7 @@ int main(void)
 
 void vButtonTask( void *pvParameters ) 
 {
-	( void ) *pvParameters; //Not used in this task
+	( void ) pvParameters; //Not used in this task
 	initButtons();
 
 	for(;;) 
@@ -97,4 +119,33 @@ void vButtonTask( void *pvParameters )
 		}
 		vTaskDelay((1000/BUTTON_UPDATE_FREQUENCY_HZ)/portTICK_RATE_MS);
 	}
+}
+
+void vWatchTask( void *pvParameters )
+{
+	( void ) pvParameters;  // Not used in this Task
+	
+	gst_time.hour = 12; 
+	gst_time.minute = 0; 
+	gst_time.second = 0; 
+	
+	for( ;; )
+	{
+		if(gst_time.second >= 60)								//Wenn eine Minute vorbei
+		{
+			gst_time.second = 0;
+			
+			if(gst_time.minute >= 60)							// Wenn eine Stunde vorbei
+			{
+				gst_time.minute = 0;
+				
+				if(gst_time.hour >= 23) gst_time.hour = 0;		// Wenn ein Tag vorbei
+				else gst_time.hour++; 
+			} 
+			else gst_time.minute++; 
+		} 
+		else gst_time.second++; 
+		
+		vTaskDelay( 100 / portTICK_RATE_MS ); 
+	} 
 }

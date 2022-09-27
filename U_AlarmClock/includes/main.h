@@ -36,14 +36,11 @@
 #define TASK_STATE_MAX ( 6 )
 typedef enum
 {
-	handleLed1 = 0,
-	handleLed2 = 1,
-	handleLed3 = 2,
-	handleLed4 = 3,
-	handleButton = 4,
-	handleLoadKiller = 5,
-	
+	WatchTaskHandle = 0U
 }enTaskHandle;
+
+
+
 
 
 #endif /* MAIN_H_ */
