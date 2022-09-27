@@ -36,7 +36,8 @@
 #define TASK_STATE_MAX ( 6 )
 typedef enum
 {
-	WatchTaskHandle = 0U
+	WatchTaskHandle = 0U, 
+	UiTaskHandle = 1U
 }enTaskHandle;
 
 

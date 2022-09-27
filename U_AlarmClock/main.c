@@ -33,6 +33,8 @@ st_task_state_t task_state[ TASK_STATE_MAX ];
 void vButtonTask( void *pvParameters );
 // Watch task
 void vWatchTask( void *pvParameters );
+// UI-Task
+void vUiTask( void *pvParameters ); 
 
 // Application Idel Hook 
 extern void vApplicationIdleHook( void );
@@ -66,11 +68,15 @@ int main(void)
 							task_state[WatchTaskHandle].handle);		// Handle
 	configASSERT( task_status == pdPASS );							// Prüfen ob der Task korrekt erstellt wurde
 	
+	task_status = xTaskCreate( vUiTask,							// Funktions Name
+							(const char *) "wtTask",					// Task Name
+							configMINIMAL_STACK_SIZE,				// Stack grösse
+							NULL,									// Übergabe Wert
+							1,										// Prio
+							task_state[UiTaskHandle].handle);		// Handle
+	configASSERT( task_status == pdPASS );							// Prüfen ob der Task korrekt erstellt wurde
+	
 	vDisplayClear();
-	vDisplayWriteStringAtPos(0,0,"FreeRTOS 10.0.1");
-	vDisplayWriteStringAtPos(1,0,"EDUBoard 1.0");
-	vDisplayWriteStringAtPos(2,0,"Template");
-	vDisplayWriteStringAtPos(3,0,"ResetReason: %d", reason);
 	vTaskStartScheduler( );
 	return 0;
 }
@@ -131,11 +137,11 @@ void vWatchTask( void *pvParameters )
 	
 	for( ;; )
 	{
-		if(gst_time.second >= 60)								//Wenn eine Minute vorbei
+		if(gst_time.second >= 59)								//Wenn eine Minute vorbei
 		{
 			gst_time.second = 0;
 			
-			if(gst_time.minute >= 60)							// Wenn eine Stunde vorbei
+			if(gst_time.minute >= 59)							// Wenn eine Stunde vorbei
 			{
 				gst_time.minute = 0;
 				
@@ -146,6 +152,33 @@ void vWatchTask( void *pvParameters )
 		} 
 		else gst_time.second++; 
 		
-		vTaskDelay( 100 / portTICK_RATE_MS ); 
+		vTaskDelay( 200 / portTICK_RATE_MS ); 
 	} 
+}
+
+void vUiTask( void *pvParameters )
+{
+	( void ) pvParameters; // Not used in this function
+	
+	// Display Buffer 
+	char disp_buffer[ 50 ]; 
+	 
+	// Init Display 
+	vDisplayClear();
+	vDisplayWriteStringAtPos(0,0,"Alarm Clock V1.0");
+		
+	
+	for( ;; )
+	{
+		// Print actual time
+		sprintf( disp_buffer, "Time: %02d:%02d:%02d", gst_time.hour, gst_time.minute, gst_time.second); 
+		vDisplayWriteStringAtPos( 1, 3, disp_buffer );
+		
+		// Print Alarm time
+		
+		
+		// Print Alarm state 
+		
+		vTaskDelay( 200 / portTICK_RATE_MS ); 
+	}
 }
