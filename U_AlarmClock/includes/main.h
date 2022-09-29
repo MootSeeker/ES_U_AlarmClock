@@ -2,27 +2,32 @@
  * main.h
  *
  * Created: 24.09.2022 09:33:35
- *  Author: kevin
+ *  Author: MootSeeker
  */ 
 
 
 #ifndef MAIN_H_
 #define MAIN_H_
 
+// Global Includes 
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 
-// Include files
+// FreeRTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "event_groups.h"
+#include "stack_macros.h"
+
+// Private include files
 #include "avr_compiler.h"
 #include "pmic_driver.h"
 #include "TC_driver.h"
 #include "clksys_driver.h"
 #include "sleepConfig.h"
 #include "port_driver.h"
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-#include "event_groups.h"
-#include "stack_macros.h"
 
 #include "mem_check.h"
 
@@ -40,8 +45,14 @@ typedef enum
 	UiTaskHandle = 1U
 }enTaskHandle;
 
+//Time structure
+typedef struct
+{
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+}st_time_t;
 
-
-
+extern st_time_t gst_time; 
 
 #endif /* MAIN_H_ */

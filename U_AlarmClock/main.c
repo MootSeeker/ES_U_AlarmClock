@@ -1,30 +1,20 @@
 /*
- * U_Taskmanegement.c
+ * main.c
  *
- * Created: 20.03.2018 18:32:07
- * Author : chaos
+ * Created: 29.09.2022 18:15:35
+ * Author : MootSeeker
  */ 
 
 // Main include file
 #include "main.h"
 
 //global time structure
-
-//Time structure
-typedef struct
-{
-	uint8_t hour;
-	uint8_t minute;
-	uint8_t second;
-}st_time_t;
-
 st_time_t gst_time; 
 
 // Task handle structure
 typedef struct
 {
 	TaskHandle_t handle;
-	
 }st_task_state_t;
 
 st_task_state_t task_state[ TASK_STATE_MAX ];
@@ -131,26 +121,28 @@ void vWatchTask( void *pvParameters )
 {
 	( void ) pvParameters;  // Not used in this Task
 	
-	gst_time.hour = 12; 
-	gst_time.minute = 0; 
-	gst_time.second = 0; 
+	st_time_t *pst_time = &gst_time; 
+	
+	pst_time->hour = 12; 
+	pst_time->minute = 0; 
+	pst_time->second = 0; 
 	
 	for( ;; )
 	{
-		if(gst_time.second >= 59)								//Wenn eine Minute vorbei
+		if( pst_time->second >= 59 )								//Wenn eine Minute vorbei
 		{
-			gst_time.second = 0;
+			pst_time->second = 0;
 			
-			if(gst_time.minute >= 59)							// Wenn eine Stunde vorbei
+			if( pst_time->minute >= 59 )							// Wenn eine Stunde vorbei
 			{
-				gst_time.minute = 0;
+				pst_time->minute = 0;
 				
-				if(gst_time.hour >= 23) gst_time.hour = 0;		// Wenn ein Tag vorbei
-				else gst_time.hour++; 
+				if( pst_time->hour >= 23 ) pst_time->hour = 0;		// Wenn ein Tag vorbei
+				else pst_time->hour++; 
 			} 
-			else gst_time.minute++; 
+			else pst_time->minute++; 
 		} 
-		else gst_time.second++; 
+		else pst_time->second++; 
 		
 		vTaskDelay( 200 / portTICK_RATE_MS ); 
 	} 
@@ -160,18 +152,20 @@ void vUiTask( void *pvParameters )
 {
 	( void ) pvParameters; // Not used in this function
 	
+	st_time_t *pst_time = &gst_time;
+	
 	// Display Buffer 
 	char disp_buffer[ 50 ]; 
 	 
 	// Init Display 
 	vDisplayClear();
-	vDisplayWriteStringAtPos(0,0,"Alarm Clock V1.0");
+	vDisplayWriteStringAtPos( 0, 0, "Alarm Clock V1.0" );
 		
 	
 	for( ;; )
 	{
 		// Print actual time
-		sprintf( disp_buffer, "Time: %02d:%02d:%02d", gst_time.hour, gst_time.minute, gst_time.second); 
+		sprintf( disp_buffer, "Time: %02d:%02d:%02d", pst_time->hour, pst_time->minute, pst_time->second ); 
 		vDisplayWriteStringAtPos( 1, 3, disp_buffer );
 		
 		// Print Alarm time
