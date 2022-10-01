@@ -10,6 +10,7 @@
 
 //global time structure
 st_time_t gst_time; 
+st_alarm_t gst_alarm; 
 
 // Task handle structure
 typedef struct
@@ -59,7 +60,7 @@ int main(void)
 	configASSERT( task_status == pdPASS );							// Prüfen ob der Task korrekt erstellt wurde
 	
 	task_status = xTaskCreate( vUiTask,							// Funktions Name
-							(const char *) "wtTask",					// Task Name
+							(const char *) "uiTask",					// Task Name
 							configMINIMAL_STACK_SIZE,				// Stack grösse
 							NULL,									// Übergabe Wert
 							1,										// Prio
@@ -152,7 +153,9 @@ void vUiTask( void *pvParameters )
 {
 	( void ) pvParameters; // Not used in this function
 	
+	//Define Structure pointer
 	st_time_t *pst_time = &gst_time;
+	st_alarm_t *pst_alarm = &gst_alarm; 
 	
 	// Display Buffer 
 	char disp_buffer[ 50 ]; 
@@ -164,14 +167,21 @@ void vUiTask( void *pvParameters )
 	
 	for( ;; )
 	{
+		
+		
+		
+		/* Display Output .......................................................................................... */
 		// Print actual time
 		sprintf( disp_buffer, "Time: %02d:%02d:%02d", pst_time->hour, pst_time->minute, pst_time->second ); 
-		vDisplayWriteStringAtPos( 1, 3, disp_buffer );
+		vDisplayWriteStringAtPos( 1, 2, disp_buffer );
 		
 		// Print Alarm time
-		
+		sprintf( disp_buffer, "Alarm: %02d:%02d:%02d", pst_alarm->hour, pst_alarm->minute, pst_alarm->second ); 
+		vDisplayWriteStringAtPos( 2, 2, disp_buffer ); 
 		
 		// Print Alarm state 
+		(pst_alarm->is_alarm_active) ? sprintf( disp_buffer, "Alarm aktiv") : sprintf( disp_buffer, "Alarm nicht aktiv")  ;
+		vDisplayWriteStringAtPos( 3, 2, disp_buffer );
 		
 		vTaskDelay( 200 / portTICK_RATE_MS ); 
 	}

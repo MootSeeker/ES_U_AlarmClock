@@ -53,6 +53,17 @@ typedef struct
 	uint8_t second;
 }st_time_t;
 
+//Alarm Structure
+typedef struct 
+{
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+	
+	uint8_t is_alarm_active; 
+}st_alarm_t;
+
 extern st_time_t gst_time; 
+extern st_alarm_t gst_alarm; 
 
 #endif /* MAIN_H_ */
