@@ -77,6 +77,8 @@ void vButtonTask( void *pvParameters )
 {
 	( void ) pvParameters; //Not used in this task
 	initButtons();
+	
+	st_alarm_t *pst_alarm = &gst_alarm; 
 
 	for(;;) 
 	{
@@ -84,11 +86,11 @@ void vButtonTask( void *pvParameters )
 		
 		if(getButtonPress(BUTTON1) == SHORT_PRESSED) 
 		{
- 
+			pst_alarm->is_alarm_active = 1; 
 		}
 		if(getButtonPress(BUTTON2) == SHORT_PRESSED) 
 		{
-
+			pst_alarm->is_alarm_active = 0;
 		}
 		if(getButtonPress(BUTTON3) == SHORT_PRESSED) 
 		{
@@ -159,29 +161,49 @@ void vUiTask( void *pvParameters )
 	
 	// Display Buffer 
 	char disp_buffer[ 50 ]; 
+	
+	PORTF.DIRSET = (1 << 1) | (1 << 0); /*LED2 & LED2*/
+	PORTF.OUTSET = 0x03;
 	 
 	// Init Display 
 	vDisplayClear();
 	vDisplayWriteStringAtPos( 0, 0, "Alarm Clock V1.0" );
-		
 	
 	for( ;; )
 	{
 		
 		
 		
-		/* Display Output .......................................................................................... */
+		/* Display and LED output ................................................................................*/
 		// Print actual time
 		sprintf( disp_buffer, "Time: %02d:%02d:%02d", pst_time->hour, pst_time->minute, pst_time->second ); 
 		vDisplayWriteStringAtPos( 1, 2, disp_buffer );
+		
+		memset(disp_buffer, 0 , sizeof(disp_buffer));	//Clear buffer
+		vTaskDelay(10);									//Small delay to clear buffer
 		
 		// Print Alarm time
 		sprintf( disp_buffer, "Alarm: %02d:%02d:%02d", pst_alarm->hour, pst_alarm->minute, pst_alarm->second ); 
 		vDisplayWriteStringAtPos( 2, 2, disp_buffer ); 
 		
 		// Print Alarm state 
-		(pst_alarm->is_alarm_active) ? sprintf( disp_buffer, "Alarm aktiv") : sprintf( disp_buffer, "Alarm nicht aktiv")  ;
-		vDisplayWriteStringAtPos( 3, 2, disp_buffer );
+		if( pst_alarm->is_alarm_active )
+		{
+			memset(disp_buffer, 0 , sizeof(disp_buffer));	//Clear buffer
+			vTaskDelay(10);									//Small delay to clear buffer
+			
+			// Print Alarm active
+			sprintf( disp_buffer, "Alarm aktiv" );
+			vDisplayWriteStringAtPos( 3, 2, disp_buffer );
+			
+			//blink LED 
+			PORTF.OUTTGL = 0x03;
+		}
+		else
+		{
+			PORTF.OUTSET = 0x03;	// Turn LED off
+		}
+		
 		
 		vTaskDelay( 200 / portTICK_RATE_MS ); 
 	}
