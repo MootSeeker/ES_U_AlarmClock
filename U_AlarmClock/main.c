@@ -30,6 +30,21 @@ void vWatchTask( void *pvParameters );
 // UI-Task
 void vUiTask( void *pvParameters ); 
 
+static BaseType_t check_alarm( void )
+{
+	//Define Structure pointer
+	st_time_t *pst_time = &gst_time;
+	st_alarm_t *pst_alarm = &gst_alarm;
+	
+	if(( pst_time->hour == pst_alarm->hour) &&
+		( pst_time->minute == pst_alarm->minute ) &&
+		( pst_time->second == pst_alarm->second ))
+		{
+			return pdTRUE; 	
+		}
+		else return pdFALSE; 
+}
+
 // Application Idel Hook 
 extern void vApplicationIdleHook( void );
 void vApplicationIdleHook( void )
@@ -83,9 +98,10 @@ int main(void)
 void vButtonTask( void *pvParameters ) 
 {
 	( void ) pvParameters; //Not used in this task
-	initButtons();
 	
-	st_alarm_t *pst_alarm = &gst_alarm; 
+	st_alarm_t *pst_alarm = &gst_alarm;
+	
+	initButtons();
 
 	for(;;) 
 	{
@@ -93,11 +109,11 @@ void vButtonTask( void *pvParameters )
 		
 		if(getButtonPress(BUTTON1) == SHORT_PRESSED) 
 		{
-			  
+			if( pst_alarm->is_alarm_menu ) xEventGroupSetBits( btnEventGrp, BIT_0 ); // Select Setting
 		}
 		if(getButtonPress(BUTTON2) == SHORT_PRESSED) 
 		{
-			
+			if( pst_alarm->is_alarm_menu ) xEventGroupSetBits( btnEventGrp, BIT_1 ); // Increment selected item
 		}
 		if(getButtonPress(BUTTON3) == SHORT_PRESSED) 
 		{
@@ -105,7 +121,7 @@ void vButtonTask( void *pvParameters )
 		}
 		if(getButtonPress(BUTTON4) == SHORT_PRESSED) 
 		{
-
+			if( pst_alarm->is_alarm_menu ) xEventGroupSetBits( btnEventGrp, BIT_6 ); //Bit 6 = Opens Alarm Value
 		}
 		if(getButtonPress(BUTTON1) == LONG_PRESSED) 
 		{
@@ -121,7 +137,7 @@ void vButtonTask( void *pvParameters )
 		}
 		if(getButtonPress(BUTTON4) == LONG_PRESSED) 
 		{
-			xEventGroupSetBits( btnEventGrp, BIT_7 ); //Bit 7 = Opens Alarm Value
+			xEventGroupSetBits( btnEventGrp, BIT_7 ); //Bit 7 = Close Alarm Value
 		}
 		vTaskDelay((1000/BUTTON_UPDATE_FREQUENCY_HZ)/portTICK_RATE_MS);
 	}
@@ -169,6 +185,8 @@ void vUiTask( void *pvParameters )
 	// Display Buffer 
 	char disp_buffer[ 50 ]; 
 	
+	uint8_t set_pos; 
+	
 	// Event bits
 	EventBits_t bits; 
 	
@@ -185,10 +203,50 @@ void vUiTask( void *pvParameters )
 		// Wait to receive Event bits / also generates new delay :)
 		bits = xEventGroupWaitBits( btnEventGrp, BIT_0 | BIT_1 | BIT_2 | BIT_3 | BIT_4 
 									| BIT_5 | BIT_6 | BIT_7, pdFALSE, pdFALSE, 200 / portTICK_RATE_MS );
-				
-		if( bits == BIT_7 )	// Alarm Menu
+		
+		if( bits == BIT_0 )
 		{
-			
+			if(set_pos < 3)set_pos++;
+			else set_pos = 0; 
+			xEventGroupClearBits( btnEventGrp, BIT_0 );							// Clear bit 
+		}
+		
+		if( bits == BIT_1 )														// Set Time
+		{
+			switch ( set_pos )
+			{
+				case 0:
+					if( pst_alarm->second <= 59 ) pst_alarm->second++;
+					else pst_alarm->second = 0;  
+					break;
+				
+				case 1:
+					if( pst_alarm->minute <= 59 ) pst_alarm->minute++; 
+					else pst_alarm->minute = 0; 
+					break;
+							
+				case 2:
+					if( pst_alarm->hour <= 23 ) pst_alarm->hour++; 
+					else pst_alarm->hour = 0; 			
+					break;
+					
+				default: 
+					// Wrong number 
+					break; 
+			}
+			xEventGroupClearBits( btnEventGrp, BIT_1 );							// Clear bit
+		}
+		
+		if( bits == BIT_6 )	// Open Alarm Menu
+		{
+			pst_alarm->is_alarm_menu = 1; 
+			xEventGroupClearBits( btnEventGrp, BIT_6 );							// Clear bit 
+		}
+		
+		if( bits == BIT_7 )	// Close Alarm Menu
+		{
+			pst_alarm->is_alarm_menu = 0;
+			xEventGroupClearBits( btnEventGrp, BIT_7 );							// Clear bit
 		}
 			
 		if( bits == BIT_2 )	// Toggle Alarm
@@ -220,12 +278,16 @@ void vUiTask( void *pvParameters )
 			sprintf( disp_buffer, "Alarm aktiv" );
 			vDisplayWriteStringAtPos( 3, 2, disp_buffer );
 			
-			//blink LED 
-			PORTF.OUTTGL = 0x03;
+			if( check_alarm() == pdTRUE )
+			{	
+				//blink LED 
+				PORTF.OUTTGL = 0x03;
+			}
 		}
 		else
 		{
-			PORTF.OUTSET = 0x03;	// Turn LED off
+			PORTF.OUTSET = 0x03;					// Turn LED off
+			vDisplayWriteStringAtPos( 3, 2, "           " );	// Clear Display line (11 Spaces)
 		}
 		
 		//// TODO: Alarm not need since Waiting for Event bits will do the delay 

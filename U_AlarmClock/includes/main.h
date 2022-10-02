@@ -73,6 +73,7 @@ typedef struct
 	uint8_t second;
 	
 	uint8_t is_alarm_active; 
+	uint8_t is_alarm_menu; 
 }st_alarm_t;
 
 extern st_time_t gst_time; 
