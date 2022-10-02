@@ -12,6 +12,9 @@
 st_time_t gst_time; 
 st_alarm_t gst_alarm; 
 
+// Event Group
+EventGroupHandle_t btnEventGrp; 
+
 // Task handle structure
 typedef struct
 {
@@ -42,7 +45,11 @@ int main(void)
 
 	vInitClock();
 	vInitDisplay();
-				 
+	
+	// Create Event Group
+	btnEventGrp = xEventGroupCreate( ); 
+		
+	//Create Tasks		 
 	task_status = xTaskCreate( vButtonTask,				// Funktions Name
 							(const char *) "btTask",		// Task Name
 							configMINIMAL_STACK_SIZE,	// Stack grösse
@@ -86,11 +93,11 @@ void vButtonTask( void *pvParameters )
 		
 		if(getButtonPress(BUTTON1) == SHORT_PRESSED) 
 		{
-			pst_alarm->is_alarm_active = 1; 
+			  
 		}
 		if(getButtonPress(BUTTON2) == SHORT_PRESSED) 
 		{
-			pst_alarm->is_alarm_active = 0;
+			
 		}
 		if(getButtonPress(BUTTON3) == SHORT_PRESSED) 
 		{
@@ -106,7 +113,7 @@ void vButtonTask( void *pvParameters )
 		}
 		if(getButtonPress(BUTTON2) == LONG_PRESSED) 
 		{
-
+			xEventGroupSetBits( btnEventGrp, BIT_2 ); // Activate Alarm
 		}
 		if(getButtonPress(BUTTON3) == LONG_PRESSED) 
 		{
@@ -114,7 +121,7 @@ void vButtonTask( void *pvParameters )
 		}
 		if(getButtonPress(BUTTON4) == LONG_PRESSED) 
 		{
-
+			xEventGroupSetBits( btnEventGrp, BIT_7 ); //Bit 7 = Opens Alarm Value
 		}
 		vTaskDelay((1000/BUTTON_UPDATE_FREQUENCY_HZ)/portTICK_RATE_MS);
 	}
@@ -162,6 +169,10 @@ void vUiTask( void *pvParameters )
 	// Display Buffer 
 	char disp_buffer[ 50 ]; 
 	
+	// Event bits
+	EventBits_t bits; 
+	
+	//Init LED	
 	PORTF.DIRSET = (1 << 1) | (1 << 0); /*LED2 & LED2*/
 	PORTF.OUTSET = 0x03;
 	 
@@ -171,8 +182,21 @@ void vUiTask( void *pvParameters )
 	
 	for( ;; )
 	{
-		
-		
+		// Wait to receive Event bits / also generates new delay :)
+		bits = xEventGroupWaitBits( btnEventGrp, BIT_0 | BIT_1 | BIT_2 | BIT_3 | BIT_4 
+									| BIT_5 | BIT_6 | BIT_7, pdFALSE, pdFALSE, 200 / portTICK_RATE_MS );
+				
+		if( bits == BIT_7 )	// Alarm Menu
+		{
+			
+		}
+			
+		if( bits == BIT_2 )	// Toggle Alarm
+		{
+			if( !pst_alarm->is_alarm_active ) pst_alarm->is_alarm_active = 1;	// Turn on when not active
+			else pst_alarm->is_alarm_active = 0;								// Turn off when active
+			xEventGroupClearBits( btnEventGrp, BIT_2 );							// Clear bit after set alarm	
+		}
 		
 		/* Display and LED output ................................................................................*/
 		// Print actual time
@@ -204,7 +228,7 @@ void vUiTask( void *pvParameters )
 			PORTF.OUTSET = 0x03;	// Turn LED off
 		}
 		
-		
-		vTaskDelay( 200 / portTICK_RATE_MS ); 
+		//// TODO: Alarm not need since Waiting for Event bits will do the delay 
+		//vTaskDelay( 200 / portTICK_RATE_MS ); 
 	}
 }
